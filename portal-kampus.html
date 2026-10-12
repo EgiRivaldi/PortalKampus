@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Akademik Kampus - Demo Keamanan</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { background: #1e3a8a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin-bottom: 15px; color: #1e3a8a; font-size: 1.2rem; }
+        .vuln-badge { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: inline-block; }
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        .result { margin-top: 12px; padding: 10px; background: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; font-size: 0.95rem; }
+        .forum-item { background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Portal Akademik Mahasiswa & Dosen</h1>
+        <p>Sistem Informasi Akademik Fiktif untuk Latihan Keamanan Web</p>
+    </header>
+
+    <!-- FITUR 1: LOGIN PORTAL (SQL INJECTION) -->
+    <div class="card">
+        <span class="vuln-badge">Sengaja Rentan: SQL Injection</span>
+        <h2>1. Login Portal Akademik</h2>
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">
+            *Simulasi payload SQLi: Masukkan username <code>admin' OR '1'='1</code>
+        </p>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="NPM / Username" required>
+            <input type="password" id="password" placeholder="Kata Sandi">
+            <button type="submit">Masuk ke Portal</button>
+        </form>
+        <div id="loginResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- FITUR 2: FORUM DISKUSI (STORED XSS) -->
+    <div class="card">
+        <span class="vuln-badge">Sengaja Rentan: Stored XSS</span>
+        <h2>2. Forum Diskusi & Pengumuman Kelas</h2>
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">
+            *Simulasi payload Stored XSS: Masukkan pesan <code>&lt;script&gt;alert('XSS Portal Kampus!')&lt;/script&gt;</code>
+        </p>
+        <form id="forumForm">
+            <input type="text" id="nama" placeholder="Nama Mahasiswa / Dosen" required>
+            <textarea id="pesan" rows="3" placeholder="Tuliskan topik diskusi atau pertanyaan tugas..." required></textarea>
+            <button type="submit">Kirim Diskusi</button>
+        </form>
+
+        <h3 style="margin-top: 20px; font-size: 1rem;">Daftar Diskusi Mahasiswa:</h3>
+        <div id="forumList"></div>
+    </div>
+</div>
+
+<script>
+    // SIMULASI SQL INJECTION (LOGIN)
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+        const resDiv = document.getElementById('loginResult');
+        resDiv.style.display = 'block';
+
+        const rawQuery = `SELECT * FROM users WHERE username = '${user}' AND password = '${pass}'`;
+
+        if (user.includes("' OR '1'='1") || user.includes("' OR 1=1")) {
+            resDiv.innerHTML = `<strong>[SQLi Berhasil]</strong> Selamat Datang, <b>Administrator Portal</b>!<br><small>Query Tereksekusi: <code>${rawQuery}</code></small>`;
+        } else if (user === "mahasiswa" && pass === "123") {
+            resDiv.innerHTML = `<strong>[Login Normal]</strong> Selamat Datang, Mahasiswa!`;
+        } else {
+            resDiv.innerHTML = `<strong>[Login Gagal]</strong> Username atau Password salah.<br><small>Query Tereksekusi: <code>${rawQuery}</code></small>`;
+        }
+    });
+
+    // SIMULASI STORED XSS (FORUM DISKUSI)
+    const forumList = document.getElementById('forumList');
+
+    function displayComments() {
+        const comments = JSON.parse(localStorage.getItem('portalComments') || '[]');
+        forumList.innerHTML = '';
+        comments.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'forum-item';
+            // VULNERABLE: Menggunakan innerHTML tanpa sanitasi tag HTML/Script
+            div.innerHTML = `<strong>${item.nama}</strong><br><span>${item.pesan}</span>`;
+            forumList.appendChild(div);
+        });
+    }
+
+    document.getElementById('forumForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nama = document.getElementById('nama').value;
+        const pesan = document.getElementById('pesan').value;
+
+        const comments = JSON.parse(localStorage.getItem('portalComments') || '[]');
+        comments.push({ nama, pesan });
+        localStorage.setItem('portalComments', JSON.stringify(comments));
+
+        document.getElementById('pesan').value = '';
+        displayComments();
+    });
+
+    displayComments();
+</script>
+
+</body>
+</html>
