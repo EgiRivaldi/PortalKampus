@@ -1,115 +1,438 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Akademik Kampus - Demo Keamanan</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; color: #333; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        header { background: #1e3a8a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { margin-bottom: 15px; color: #1e3a8a; font-size: 1.2rem; }
-        .vuln-badge { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #1d4ed8; }
-        .result { margin-top: 12px; padding: 10px; background: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; font-size: 0.95rem; }
-        .forum-item { background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; margin-top: 8px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+  <title>SIAKAD Terpadu · Portal Akademik Kampus</title>
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --ok-bg: #dcfce7;
+      --ok-text: #166534;
+      --err-bg: #fee2e2;
+      --err-text: #991b1b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .navbar {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: #3b82f6; display: grid; place-items: center;
+      font-weight: 800; font-size: 20px; color: #fff;
+    }
+    .brand-text h1 { font-size: 18px; font-weight: 700; }
+    .brand-text p { font-size: 12px; color: #cbd5e1; }
+    .sec-badge {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid #4ade80;
+      color: #bbf7d0;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    /* Layout Login Khusus (Center Screen) */
+    .login-wrapper {
+      max-width: 440px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    /* Layout Dashboard Utama (Tersembunyi sebelum login) */
+    .main-container {
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 820px) {
+      .main-container { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-header h2 { font-size: 17px; color: var(--primary); }
+    .tag-secure {
+      font-size: 11px; font-weight: 700;
+      background: var(--ok-bg); color: var(--ok-text);
+      padding: 3px 8px; border-radius: 6px;
+    }
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block; font-size: 13px; font-weight: 600;
+      margin-bottom: 6px; color: var(--primary);
+    }
+    input, textarea, select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 14px; font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    button.btn {
+      width: 100%; padding: 11px 16px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background 0.2s;
+    }
+    button.btn:hover { background: var(--accent-hover); }
+    button.btn-danger {
+      background: #dc2626; margin-top: 8px;
+    }
+    button.btn-danger:hover { background: #b91c1c; }
+
+    .alert {
+      padding: 11px 14px; border-radius: 8px;
+      font-size: 13px; margin-top: 12px; display: none;
+    }
+    .alert.ok { display: block; background: var(--ok-bg); color: var(--ok-text); border: 1px solid #86efac; }
+    .alert.err { display: block; background: var(--err-bg); color: var(--err-text); border: 1px solid #fca5a5; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 10px; }
+    th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; }
+    th { background: #f8fafc; font-weight: 600; }
+    .forum-list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .forum-item {
+      background: #f8fafc; border: 1px solid var(--border);
+      padding: 12px; border-radius: 8px;
+    }
+    .forum-meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .forum-msg { font-size: 14px; color: var(--text); word-break: break-word; }
+    .hint-box {
+      background: #eff6ff; border-left: 4px solid #3b82f6;
+      padding: 10px 12px; font-size: 12.5px; color: #1e3a8a;
+      border-radius: 4px; margin-bottom: 14px;
+    }
+    footer {
+      text-align: center; padding: 20px; font-size: 13px; color: var(--muted);
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>Portal Akademik Mahasiswa & Dosen</h1>
-        <p>Sistem Informasi Akademik Fiktif untuk Latihan Keamanan Web</p>
-    </header>
-
-    <!-- FITUR 1: LOGIN PORTAL (SQL INJECTION) -->
-    <div class="card">
-        <span class="vuln-badge">Sengaja Rentan: SQL Injection</span>
-        <h2>1. Login Portal Akademik</h2>
-        <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">
-            *Simulasi payload SQLi: Masukkan username <code>admin' OR '1'='1</code>
-        </p>
-        <form id="loginForm">
-            <input type="text" id="username" placeholder="NPM / Username" required>
-            <input type="password" id="password" placeholder="Kata Sandi">
-            <button type="submit">Masuk ke Portal</button>
-        </form>
-        <div id="loginResult" class="result" style="display: none;"></div>
+<nav class="navbar">
+  <div class="brand">
+    <div class="brand-icon">P</div>
+    <div class="brand-text">
+      <h1>SIAKAD · Portal Akademik Mahasiswa &amp; Dosen</h1>
+      <p>Program Studi D-III Manajemen Informatika · Keamanan Sistem Informasi</p>
     </div>
+  </div>
+  <div class="sec-badge">Status Keamanan: Patched &amp; Terlindungi</div>
+</nav>
 
-    <!-- FITUR 2: FORUM DISKUSI (STORED XSS) -->
-    <div class="card">
-        <span class="vuln-badge">Sengaja Rentan: Stored XSS</span>
-        <h2>2. Forum Diskusi & Pengumuman Kelas</h2>
-        <p style="font-size: 0.85rem; color: #666; margin-bottom: 12px;">
-            *Simulasi payload Stored XSS: Masukkan pesan <code>&lt;script&gt;alert('XSS Portal Kampus!')&lt;/script&gt;</code>
-        </p>
-        <form id="forumForm">
-            <input type="text" id="nama" placeholder="Nama Mahasiswa / Dosen" required>
-            <textarea id="pesan" rows="3" placeholder="Tuliskan topik diskusi atau pertanyaan tugas..." required></textarea>
-            <button type="submit">Kirim Diskusi</button>
-        </form>
-
-        <h3 style="margin-top: 20px; font-size: 1rem;">Daftar Diskusi Mahasiswa:</h3>
-        <div id="forumList"></div>
+<!-- 1. HALAMAN LOGIN UTAMA (Tampil pertama kali) -->
+<div id="login-page" class="login-wrapper">
+  <div class="card">
+    <div class="card-header">
+      <h2>Login Portal Akademik</h2>
+      <span class="tag-secure">Anti-SQLi &amp; Lockout</span>
     </div>
+    <div class="hint-box">
+      Akun Demo Ujian:<br>
+      Username: <strong>admin</strong><br>
+      Password: <strong>admin123</strong>
+    </div>
+    <form id="form-login" autocomplete="off">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" maxlength="25" placeholder="Masukkan username (admin)" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" maxlength="40" placeholder="Masukkan password (admin123)" required>
+      </div>
+      <button type="submit" class="btn" id="btn-login">Masuk ke Portal</button>
+    </form>
+    <div id="login-alert" class="alert" role="alert"></div>
+  </div>
 </div>
 
+<!-- 2. DASBOR UTAMA (Tersembunyi sampai berhasil login) -->
+<div id="dashboard-page" class="main-container" style="display: none;">
+  <!-- Kolom Kiri: Profil & Menu Sesi -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Profil Sesi Aktif</h2>
+        <span class="tag-secure">Terautentikasi</span>
+      </div>
+      <p style="font-size:14px; margin-bottom:14px;">
+        Pengguna: <strong id="sess-user">admin</strong><br>
+        Hak Akses: <strong>Administrator Akademik</strong><br>
+        Pemilik Portal: <strong>Egi Rivaldi (24781039)</strong><br>
+        Kelas: <strong>5B - Manajemen Informatika</strong>
+      </p>
+      <button type="button" class="btn btn-danger" id="btn-logout">Keluar (Logout)</button>
+    </div>
+  </div>
+
+  <!-- Kolom Kanan: Fitur Akademik (Pencarian & Forum) -->
+  <div>
+    <!-- Pencarian Mata Kuliah -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Katalog &amp; Pencarian Mata Kuliah</h2>
+        <span class="tag-secure">Output Encoded</span>
+      </div>
+      <form id="form-search" style="display:flex; gap:10px; margin-bottom:12px;">
+        <input type="text" id="search-input" maxlength="50" placeholder="Cari kode atau nama mata kuliah...">
+        <button type="submit" class="btn" style="width:140px;">Cari</button>
+      </form>
+      <div id="search-info" style="font-size:13px; color:var(--muted); margin-bottom:8px;"></div>
+      <table>
+        <thead>
+          <tr><th>Kode MK</th><th>Mata Kuliah</th><th>SKS</th><th>Status</th></tr>
+        </thead>
+        <tbody id="mk-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Forum Diskusi Kelas -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Forum Diskusi &amp; Pengumuman Kelas</h2>
+        <span class="tag-secure">Anti-XSS</span>
+      </div>
+      <form id="form-forum">
+        <div class="form-group">
+          <label for="forum-nama">Nama Pengirim</label>
+          <input type="text" id="forum-nama" maxlength="40" placeholder="Nama lengkap / NPM" required>
+        </div>
+        <div class="form-group">
+          <label for="forum-pesan">Pesan Diskusi</label>
+          <textarea id="forum-pesan" rows="3" maxlength="300" placeholder="Tulis pertanyaan atau pengumuman kelas..." required></textarea>
+        </div>
+        <button type="submit" class="btn">Kirim Pesan Diskusi</button>
+      </form>
+      <div id="forum-alert" class="alert" role="alert"></div>
+
+      <h3 style="font-size:15px; margin-top:20px; color:var(--primary);">Daftar Diskusi Mahasiswa:</h3>
+      <div class="forum-list" id="forum-list"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Portal Akademik Latihan Keamanan Sistem Informasi (PMI 1522) · Politeknik Negeri Lampung
+</footer>
+
 <script>
-    // SIMULASI SQL INJECTION (LOGIN)
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
-        const resDiv = document.getElementById('loginResult');
-        resDiv.style.display = 'block';
+(function() {
+  'use strict';
 
-        const rawQuery = `SELECT * FROM users WHERE username = '${user}' AND password = '${pass}'`;
+  try { localStorage.clear(); } catch (e) {}
 
-        if (user.includes("' OR '1'='1") || user.includes("' OR 1=1")) {
-            resDiv.innerHTML = `<strong>[SQLi Berhasil]</strong> Selamat Datang, <b>Administrator Portal</b>!<br><small>Query Tereksekusi: <code>${rawQuery}</code></small>`;
-        } else if (user === "mahasiswa" && pass === "123") {
-            resDiv.innerHTML = `<strong>[Login Normal]</strong> Selamat Datang, Mahasiswa!`;
-        } else {
-            resDiv.innerHTML = `<strong>[Login Gagal]</strong> Username atau Password salah.<br><small>Query Tereksekusi: <code>${rawQuery}</code></small>`;
-        }
-    });
+  const MATA_KULIAH = [
+    { kode: 'PMI 1522', nama: 'Keamanan Sistem Informasi', sks: 3, status: 'Aktif' },
+    { kode: 'PMI 1521', nama: 'Pemrograman Web Lanjut', sks: 3, status: 'Aktif' },
+    { kode: 'PMI 1523', nama: 'Administrasi Jaringan & Server', sks: 3, status: 'Aktif' },
+    { kode: 'PMI 1524', nama: 'Manajemen Proyek TI', sks: 2, status: 'Aktif' }
+  ];
 
-    // SIMULASI STORED XSS (FORUM DISKUSI)
-    const forumList = document.getElementById('forumList');
+  const DANGEROUS_PATTERN = /('|"|--|;|\/\*|\*\/|<script|<\/script|onerror\s*=|onload\s*=|javascript:|union\s+select|or\s+['"]?1['"]?\s*=\s*['"]?1)/i;
+  const ALPHANUMERIC_ONLY = /^[a-zA-Z0-9_]{3,25}$/;
 
-    function displayComments() {
-        const comments = JSON.parse(localStorage.getItem('portalComments') || '[]');
-        forumList.innerHTML = '';
-        comments.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'forum-item';
-            // VULNERABLE: Menggunakan innerHTML tanpa sanitasi tag HTML/Script
-            div.innerHTML = `<strong>${item.nama}</strong><br><span>${item.pesan}</span>`;
-            forumList.appendChild(div);
-        });
+  const loginPage = document.getElementById('login-page');
+  const dashboardPage = document.getElementById('dashboard-page');
+  const formLogin = document.getElementById('form-login');
+  const loginAlert = document.getElementById('login-alert');
+
+  let failedAttempts = 0;
+  let lockoutUntil = 0;
+
+  function showAlert(el, type, msg) {
+    el.className = 'alert ' + type;
+    el.textContent = msg;
+  }
+
+  // 1. LOGIKA LOGIN TERPISAH
+  formLogin.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const now = Date.now();
+    if (now < lockoutUntil) {
+      const sisa = Math.ceil((lockoutUntil - now) / 1000);
+      showAlert(loginAlert, 'err', '[Akses Ditolak] Terlalu banyak percobaan gagal. Coba lagi dalam ' + sisa + ' detik.');
+      return;
     }
 
-    document.getElementById('forumForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const nama = document.getElementById('nama').value;
-        const pesan = document.getElementById('pesan').value;
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
 
-        const comments = JSON.parse(localStorage.getItem('portalComments') || '[]');
-        comments.push({ nama, pesan });
-        localStorage.setItem('portalComments', JSON.stringify(comments));
+    if (!ALPHANUMERIC_ONLY.test(user) || DANGEROUS_PATTERN.test(pass)) {
+      failedAttempts++;
+      showAlert(loginAlert, 'err', '[Keamanan Sistem] Input ditolak! Karakter khusus SQL/injeksi tidak diizinkan.');
+      return;
+    }
 
-        document.getElementById('pesan').value = '';
-        displayComments();
+    if (user === 'admin' && pass === 'admin123') {
+      failedAttempts = 0;
+      // Sembunyikan halaman login, tampilkan dasbor utama
+      loginPage.style.display = 'none';
+      dashboardPage.style.display = 'grid';
+      formLogin.reset();
+      loginAlert.className = 'alert';
+    } else {
+      failedAttempts++;
+      if (failedAttempts >= 5) {
+        lockoutUntil = Date.now() + 30000;
+        failedAttempts = 0;
+        showAlert(loginAlert, 'err', '[Akun Dikunci] Batas percobaan login habis. Tunggu 30 detik.');
+      } else {
+        showAlert(loginAlert, 'err', '[Login Gagal] Username atau Password salah.');
+      }
+    }
+  });
+
+  // Tombol Logout / Keluar
+  document.getElementById('btn-logout').addEventListener('click', function() {
+    dashboardPage.style.display = 'none';
+    loginPage.style.display = 'block';
+  });
+
+  // 2. MODUL PENCARIAN
+  const tbody = document.getElementById('mk-tbody');
+  const searchInfo = document.getElementById('search-info');
+
+  function renderMK(keyword) {
+    tbody.innerHTML = '';
+    const q = (keyword || '').trim().toLowerCase();
+
+    if (q && DANGEROUS_PATTERN.test(q)) {
+      searchInfo.textContent = '[Keamanan Sistem] Permintaan pencarian mengandung karakter berbahaya dan telah diblokir.';
+      return;
+    }
+
+    searchInfo.textContent = q ? 'Hasil pencarian untuk: "' + keyword.trim() + '"' : 'Menampilkan daftar mata kuliah semester berjalan.';
+
+    const filtered = MATA_KULIAH.filter(function(m) {
+      return m.kode.toLowerCase().includes(q) || m.nama.toLowerCase().includes(q);
     });
 
-    displayComments();
-</script>
+    if (filtered.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = 'Data mata kuliah tidak ditemukan.';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
 
+    filtered.forEach(function(m) {
+      const tr = document.createElement('tr');
+      [m.kode, m.nama, String(m.sks), m.status].forEach(function(val) {
+        const td = document.createElement('td');
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('form-search').addEventListener('submit', function(e) {
+    e.preventDefault();
+    renderMK(document.getElementById('search-input').value);
+  });
+
+  renderMK('');
+
+  // 3. MODUL FORUM
+  const forumList = document.getElementById('forum-list');
+  const forumAlert = document.getElementById('forum-alert');
+  const discussions = [
+    { nama: 'Admin Akademik', waktu: 'Hari ini, 08:00 WIB', pesan: 'Sistem akses memerlukan login terlebih dahulu untuk masuk ke dalam portal akademik.' },
+    { nama: 'Egi Rivaldi (24781039)', waktu: 'Hari ini, 09:30 WIB', pesan: 'Halaman login terpisah dan sistem otentikasi aman telah diaktifkan.' }
+  ];
+
+  function renderForum() {
+    forumList.innerHTML = '';
+    discussions.forEach(function(d) {
+      const item = document.createElement('div');
+      item.className = 'forum-item';
+
+      const meta = document.createElement('div');
+      meta.className = 'forum-meta';
+      meta.textContent = d.nama + ' • ' + d.waktu;
+
+      const msg = document.createElement('div');
+      msg.className = 'forum-msg';
+      msg.textContent = d.pesan;
+
+      item.appendChild(meta);
+      item.appendChild(msg);
+      forumList.appendChild(item);
+    });
+  }
+
+  document.getElementById('form-forum').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nama = document.getElementById('forum-nama').value.trim();
+    const pesan = document.getElementById('forum-pesan').value.trim();
+    if (!nama || !pesan) return;
+
+    if (DANGEROUS_PATTERN.test(nama) || DANGEROUS_PATTERN.test(pesan)) {
+      showAlert(forumAlert, 'err', '[Keamanan Sistem] Payload skrip terdeteksi dan telah dinetralkan.');
+    } else {
+      showAlert(forumAlert, 'ok', 'Pesan diskusi berhasil dikirim.');
+    }
+
+    const jam = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    discussions.unshift({
+      nama: nama.slice(0, 40),
+      waktu: 'Baru saja (' + jam + ' WIB)',
+      pesan: pesan.slice(0, 300)
+    });
+
+    renderForum();
+    document.getElementById('forum-pesan').value = '';
+  });
+
+  renderForum();
+})();
+</script>
 </body>
 </html>
